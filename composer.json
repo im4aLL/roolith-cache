@@ -1,0 +1,23 @@
+{
+    "name": "roolith/cache",
+    "description": "PSR-6 and PSR-16 compatible cache system using PHP",
+    "type": "library",
+    "minimum-stability": "stable",
+    "require": {
+        "psr/cache": "^1.0",
+        "nesbot/carbon": "^2.37"
+    },
+    "authors": [
+        {
+            "name": "Hadi",
+            "email": "me@habibhadi.com"
+        }
+    ],
+    "require-dev": {
+        "phpunit/phpunit": "^9.2"
+    },
+    "autoload": {
+        "psr-4": {"Roolith\\": "src/"}
+    },
+    "version": "1.0.0"
+}
