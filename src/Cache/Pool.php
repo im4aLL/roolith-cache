@@ -4,7 +4,6 @@ namespace Roolith\Cache;
 
 use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
-use Psr\Cache\InvalidArgumentException;
 use Roolith\Interfaces\DriverInterface;
 
 class Pool implements CacheItemPoolInterface
@@ -15,6 +14,8 @@ class Pool implements CacheItemPoolInterface
     public function __construct(DriverInterface $driver)
     {
         $this->driver = $driver;
+        $this->driver->bootstrap();
+
         $this->items = [];
     }
 
@@ -53,9 +54,7 @@ class Pool implements CacheItemPoolInterface
      */
     public function clear()
     {
-        $this->driver->flush();
-
-        return $this;
+        return $this->driver->flush();
     }
 
     /**
@@ -63,9 +62,7 @@ class Pool implements CacheItemPoolInterface
      */
     public function deleteItem($key)
     {
-        $this->driver->delete($key);
-
-        return $this;
+        return $this->driver->delete($key);
     }
 
     /**
@@ -73,9 +70,15 @@ class Pool implements CacheItemPoolInterface
      */
     public function deleteItems(array $keys = [])
     {
-        $this->driver->deleteMany($keys);
+        $result = true;
 
-        return $this;
+        foreach ($keys as $key) {
+            if (!$this->driver->delete($key)) {
+                $result = false;
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -112,5 +115,10 @@ class Pool implements CacheItemPoolInterface
         $this->items = [];
 
         return $result;
+    }
+
+    public function getItemDetails($key)
+    {
+        return $this->driver->getRaw($key);
     }
 }

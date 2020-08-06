@@ -5,7 +5,8 @@
     "minimum-stability": "stable",
     "require": {
         "psr/cache": "^1.0",
-        "nesbot/carbon": "^2.37"
+        "nesbot/carbon": "^2.37",
+        "psr/simple-cache": "^1.0"
     },
     "authors": [
         {

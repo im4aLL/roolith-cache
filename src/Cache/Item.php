@@ -83,7 +83,7 @@ class Item implements CacheItemInterface
         } elseif (is_int($time)) {
             $this->expiration = Carbon::now()->addSeconds($time);
         } else {
-            throw new InvalidArgumentException('Invalid expireAfter argument');
+            $this->expiration = Carbon::now()->addHour(5);
         }
     }
 

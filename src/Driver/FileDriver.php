@@ -4,57 +4,106 @@ namespace Roolith\Driver;
 
 use Carbon\Carbon;
 use Roolith\Interfaces\DriverInterface;
+use Roolith\Traits\FileSystem;
 
 class FileDriver extends Driver implements DriverInterface
 {
+    use FileSystem;
+
+    public $cacheDir;
+
+    public function bootstrap()
+    {
+        $config = $this->getConfig();
+        $this->cacheDir = $config['dir'];
+
+        $this->makeDir($this->cacheDir);
+    }
 
     public function store($key, $value, Carbon $expiration)
     {
-        // TODO: Implement store() method.
-    }
+        $filename = $this->getFilenameByKey($key);
+        $compressData = $this->compress($key, $value, $expiration);
 
-    public function storeMany(array $array)
-    {
-        // TODO: Implement storeMany() method.
+        if (file_put_contents($this->cacheDir.'/'.$filename, $compressData) !== false) {
+            return true;
+        }
+
+        return false;
     }
 
     public function get($key)
     {
-        // TODO: Implement get() method.
+        $filename = $this->getFilenameByKey($key);
+
+        if (!file_exists($this->cacheDir.'/'.$filename)) {
+            return false;
+        }
+
+        $compressData = file_get_contents($this->cacheDir.'/'.$filename);
+        $data = $this->decompress($compressData);
+
+        if ($this->isExpired($data) || !$this->isValid($data)) {
+            return false;
+        }
+
+        return $data['value'];
     }
 
-    public function many(array $keys)
+    public function getRaw($key)
     {
-        // TODO: Implement many() method.
+        $filename = $this->getFilenameByKey($key);
+
+        if (!file_exists($this->cacheDir.'/'.$filename)) {
+            return null;
+        }
+
+        $compressData = file_get_contents($this->cacheDir.'/'.$filename);
+        return $this->decompress($compressData);
     }
 
     public function has($key)
     {
-        // TODO: Implement has() method.
+        $filename = $this->getFilenameByKey($key);
+
+        return file_exists($this->cacheDir.'/'.$filename);
     }
 
     public function delete($key)
     {
-        // TODO: Implement delete() method.
-    }
+        if (!$this->has($key)) {
+            return false;
+        }
 
-    public function deleteMany(array $keys)
-    {
-        // TODO: Implement deleteMany() method.
+        $filename = $this->getFilenameByKey($key);
+
+        return unlink($this->cacheDir.'/'.$filename);
     }
 
     public function flush()
     {
-        // TODO: Implement flush() method.
+        return $this->deleteFilesInDir($this->cacheDir);
     }
 
     public function isValid($value)
     {
-        // TODO: Implement isValid() method.
+        return is_array($value) && isset($value['key']) && isset($value['value']) && isset($value['expiration']);
     }
 
-    public function isExpired($key)
+    public function isExpired($decompressData)
     {
-        // TODO: Implement isExpired() method.
+        return Carbon::now()->gte($decompressData['expiration']);
+    }
+
+    protected function getCacheFileExtension()
+    {
+        $config = $this->getConfig();
+
+        return isset($config['ext']) ? $config['ext'] : 'rcache';
+    }
+
+    protected function getFilenameByKey($key)
+    {
+        return $this->sanitizeKeyString($key).'.'.$this->getCacheFileExtension();
     }
 }
