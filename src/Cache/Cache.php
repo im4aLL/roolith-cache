@@ -1,7 +1,6 @@
 <?php
 namespace Roolith\Cache;
 
-
 use Carbon\Carbon;
 use Roolith\Driver\FileDriver;
 

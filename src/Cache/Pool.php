@@ -117,6 +117,12 @@ class Pool implements CacheItemPoolInterface
         return $result;
     }
 
+    /**
+     * Get item details
+     *
+     * @param $key
+     * @return mixed
+     */
     public function getItemDetails($key)
     {
         return $this->driver->getRaw($key);

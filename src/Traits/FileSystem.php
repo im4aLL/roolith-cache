@@ -6,6 +6,13 @@ use Exception;
 
 trait FileSystem
 {
+    /**
+     * Make directory
+     *
+     * @param $dir
+     * @param int $permission
+     * @return $this
+     */
     public function makeDir($dir, $permission = 0777)
     {
         if (!file_exists($dir)) {
@@ -15,6 +22,12 @@ trait FileSystem
         return $this;
     }
 
+    /**
+     * Delete directory
+     *
+     * @param $dirPath
+     * @return FileSystem
+     */
     public function deleteDir($dirPath)
     {
         if (substr($dirPath, strlen($dirPath) - 1, 1) !== '/') {
@@ -32,8 +45,16 @@ trait FileSystem
         }
 
         rmdir($dirPath);
+
+        return $this;
     }
 
+    /**
+     * Delete files in a directory
+     *
+     * @param $dir
+     * @return bool
+     */
     public function deleteFilesInDir($dir)
     {
         $result = true;
