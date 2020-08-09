@@ -3,7 +3,8 @@ namespace Roolith\Cache;
 
 
 use Psr\Cache\CacheItemInterface;
-use Psr\Cache\CacheItemPoolInterface;
+use Roolith\Cache\Psr6\InvalidArgumentException;
+use Roolith\Interfaces\CacheItemPoolInterface;
 use Roolith\Interfaces\DriverInterface;
 
 class Pool implements CacheItemPoolInterface
@@ -24,6 +25,8 @@ class Pool implements CacheItemPoolInterface
      */
     public function getItem($key)
     {
+        $key = $this->validateKey($key);
+
         return new Item($key, $this->driver->get($key));
     }
 
@@ -46,6 +49,8 @@ class Pool implements CacheItemPoolInterface
      */
     public function hasItem($key)
     {
+        $key = $this->validateKey($key);
+
         return $this->driver->has($key);
     }
 
@@ -62,6 +67,8 @@ class Pool implements CacheItemPoolInterface
      */
     public function deleteItem($key)
     {
+        $key = $this->validateKey($key);
+
         return $this->driver->delete($key);
     }
 
@@ -118,13 +125,25 @@ class Pool implements CacheItemPoolInterface
     }
 
     /**
-     * Get item details
-     *
-     * @param $key
-     * @return mixed
+     * @inheritDoc
      */
     public function getItemDetails($key)
     {
         return $this->driver->getRaw($key);
+    }
+
+    /**
+     * Valid key string
+     *
+     * @param $key
+     * @return string
+     */
+    private function validateKey($key)
+    {
+        if (!$key || is_null($key) || !is_string($key) || strpbrk($key, '{}()/\@:')) {
+            throw new InvalidArgumentException('Invalid key: '.var_export($key, true));
+        }
+
+        return $key;
     }
 }

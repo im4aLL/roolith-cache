@@ -1,5 +1,4 @@
 <?php
-
 use Roolith\Cache\Cache;
 use Roolith\Cache\CacheFactory;
 use Roolith\Cache\SimpleCache;
@@ -16,7 +15,11 @@ function dd($d) {
 
 $fileDriver = new FileDriver(['dir' => __DIR__. '/cache']);
 $pool = new Pool($fileDriver);
-$item = $pool->getItem('foo');
+try {
+    $item = $pool->getItem('foo');
+} catch (\Psr\Cache\InvalidArgumentException $e) {
+    echo $e->getMessage();
+}
 
 if (!$item->isHit()) {
     $item->set([1, 2, 3])->expiresAfter(3600);
@@ -27,9 +30,13 @@ dd($item->get());
 dd($pool->getItemDetails('foo'));
 
 $fileDriver = new FileDriver(['dir' => __DIR__. '/cache']);
-$simpleCache = new SimpleCache($fileDriver);
+$simpleCache = new SimpleCache(new FileDriver(['dir' => __DIR__. '/cache']));
 
-dd($simpleCache->get('foo'));
+try {
+    dd($simpleCache->get('foo'));
+} catch (\Psr\SimpleCache\InvalidArgumentException $e) {
+    echo $e->getMessage();
+}
 
 
 $cache = new Cache();

@@ -14,7 +14,7 @@ class Item implements CacheItemInterface
     protected $value;
     protected $expiration;
 
-    public function __construct($key, $value)
+    public function __construct($key, $value = null)
     {
         $this->key = $key;
         $this->value = $value;

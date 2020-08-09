@@ -3,6 +3,7 @@ namespace Roolith\Cache;
 
 use Carbon\Carbon;
 use Psr\SimpleCache\CacheInterface;
+use Roolith\Cache\Psr16\InvalidArgumentException;
 use Roolith\Interfaces\DriverInterface;
 
 class SimpleCache implements CacheInterface
@@ -21,6 +22,8 @@ class SimpleCache implements CacheInterface
      */
     public function get($key, $default = null)
     {
+        $key = $this->validateKey($key);
+
         $value = $this->driver->get($key);
 
         if ($value === false) {
@@ -35,6 +38,8 @@ class SimpleCache implements CacheInterface
      */
     public function set($key, $value, $ttl = null)
     {
+        $key = $this->validateKey($key);
+
         $expiration = Carbon::now()->addHours(5);
 
         if ($ttl instanceof DateInterval) {
@@ -51,6 +56,8 @@ class SimpleCache implements CacheInterface
      */
     public function delete($key)
     {
+        $key = $this->validateKey($key);
+
         return $this->driver->delete($key);
     }
 
@@ -114,6 +121,17 @@ class SimpleCache implements CacheInterface
      */
     public function has($key)
     {
+        $key = $this->validateKey($key);
+
         return $this->driver->has($key);
+    }
+
+    private function validateKey($key)
+    {
+        if (!$key || is_null($key) || !is_string($key) || strpbrk($key, '{}()/\@:')) {
+            throw new InvalidArgumentException('Invalid key: '.var_export($key, true));
+        }
+
+        return $key;
     }
 }
