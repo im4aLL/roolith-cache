@@ -2,22 +2,25 @@
 namespace Roolith\Cache;
 
 use Carbon\Carbon;
+use Carbon\CarbonInterval;
 use DateInterval;
 use DateTime;
 use DateTimeInterface;
-use InvalidArgumentException;
 use Psr\Cache\CacheItemInterface;
+use Roolith\Cache\Psr6\InvalidArgumentException;
 
 class Item implements CacheItemInterface
 {
     protected $key;
     protected $value;
     protected $expiration;
+    protected $defaultExpiration;
 
     public function __construct($key, $value = null)
     {
         $this->key = $key;
         $this->value = $value;
+        $this->setDefaultExpiration(Carbon::now()->addMonths(1));
     }
 
     /**
@@ -59,10 +62,10 @@ class Item implements CacheItemInterface
      */
     public function expiresAt($expiration)
     {
-        if (!($expiration instanceof DateTimeInterface) && !($expiration instanceof Carbon) && !($expiration instanceof DateTime)) {
+        if (is_null($expiration)) {
+            $this->expiration = $this->getDefaultExpiration();
+        } elseif (!($expiration instanceof DateTimeInterface) && !($expiration instanceof Carbon) && !($expiration instanceof DateTime)) {
             throw new InvalidArgumentException('expiresAt should be \DateTime or \DateTimeInterface');
-        } elseif (is_null($expiration)) {
-            $this->expiration = Carbon::now()->addHour(5);
         } elseif ($expiration instanceof Carbon) {
             $this->expiration = $expiration;
         } else {
@@ -78,11 +81,11 @@ class Item implements CacheItemInterface
     public function expiresAfter($time)
     {
         if ($time instanceof DateInterval) {
-            $this->expiration = Carbon::instance($time);
+            $this->expiration = Carbon::now()->addSeconds(CarbonInterval::instance($time)->seconds);
         } elseif (is_int($time)) {
             $this->expiration = Carbon::now()->addSeconds($time);
         } else {
-            $this->expiration = Carbon::now()->addHour(5);
+            $this->expiration = $this->getDefaultExpiration();
         }
     }
 
@@ -92,5 +95,24 @@ class Item implements CacheItemInterface
     public function getExpiration()
     {
         return $this->expiration;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getDefaultExpiration()
+    {
+        return $this->defaultExpiration;
+    }
+
+    /**
+     * @param $defaultExpiration
+     * @return $this
+     */
+    public function setDefaultExpiration($defaultExpiration)
+    {
+        $this->defaultExpiration = $defaultExpiration;
+
+        return $this;
     }
 }
