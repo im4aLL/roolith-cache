@@ -9,7 +9,14 @@ abstract class Driver
 
     public function __construct(array $config = [])
     {
+        $this->setConfig($config);
+    }
+
+    public function setConfig(array $config = [])
+    {
         $this->config = $config;
+
+        return $this;
     }
 
     public function getConfig()
