@@ -20,5 +20,10 @@
     "autoload": {
         "psr-4": {"Roolith\\": "src/"}
     },
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "provide": {
+        "psr/cache-implementation": "^1.0",
+        "psr/simple-cache-implementation": "^1.0"
+    },
+    "license": "MIT"
 }
