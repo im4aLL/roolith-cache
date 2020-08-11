@@ -120,4 +120,9 @@ class PoolTest extends \PHPUnit\Framework\TestCase
         $this->expectException(\Roolith\Cache\Psr6\InvalidArgumentException::class);
         $this->pool->getItem('{aaaa');
     }
+
+    public function tearDown(): void
+    {
+        $this->deleteDir(__DIR__. '/cache');
+    }
 }
