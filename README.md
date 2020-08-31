@@ -78,3 +78,72 @@ print_r($simpleCache->get('foo'));
 ```
 
 Note: Only file based driver added. Have plan to add more driver later.
+
+
+#### Development
+```text
+$ ./vendor/bin/phpunit --testdox tests
+PHPUnit 9.2.6 by Sebastian Bergmann and contributors.
+
+Cache Factory
+ ✔ Should store cache
+ ✔ Should check whether has cache
+ ✔ Should get cache
+ ✔ Should delete cache
+ ✔ Should delete all cache
+
+Cache
+ ✔ Should store cache
+ ✔ Should check whether has cache
+ ✔ Should get cache
+ ✔ Should delete cache
+ ✔ Should delete all cache
+
+File Driver
+ ✔ Should be an instance of driver
+ ✔ Should implement driver interface
+ ✔ Should add config
+ ✔ Should create cache dir
+ ✔ Should store cache
+ ✔ Should get cached item
+ ✔ Should get raw cached item
+ ✔ Should return boolean whether cache exists or not
+ ✔ Should delete cache item
+ ✔ Should delete all cached item
+ ✔ Should return false for expired cache item
+
+Item
+ ✔ Should get key
+ ✔ Should get value
+ ✔ Should return boolean whether value is hit
+ ✔ Should set value
+ ✔ Should set expire at
+ ✔ Should set expire after
+
+Pool
+ ✔ Should get item
+ ✔ Should get multiple items
+ ✔ Should check whether has item
+ ✔ Should clear all cache
+ ✔ Should delete item
+ ✔ Should delete multiple items
+ ✔ Should save cache item
+ ✔ Should save multiple items via commit
+ ✔ Should have raw details for cache item
+ ✔ Should give invalid argument exception for invalid key
+
+Simple Cache
+ ✔ Should get cache item
+ ✔ Should store cache item
+ ✔ Should delete cache item
+ ✔ Should delete all cache item
+ ✔ Should get multiple cache item
+ ✔ Should store multiple items
+ ✔ Should delete multiple items
+ ✔ Should check whether has cache item
+ ✔ Should give invalid argument exception
+
+Time: 00:00.118, Memory: 8.00 MB
+
+OK (46 tests, 69 assertions)
+```
