@@ -1,5 +1,5 @@
 <?php
-namespace Roolith\Driver;
+namespace Roolith\Caching\Driver;
 
 use Carbon\Carbon;
 

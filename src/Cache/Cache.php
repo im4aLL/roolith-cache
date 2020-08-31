@@ -1,8 +1,8 @@
 <?php
-namespace Roolith\Cache;
+namespace Roolith\Caching\Cache;
 
 use Carbon\Carbon;
-use Roolith\Driver\FileDriver;
+use Roolith\Caching\Driver\FileDriver;
 
 class Cache
 {

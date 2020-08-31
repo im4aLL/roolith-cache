@@ -2,13 +2,13 @@
 
 class FileDriverTest extends \PHPUnit\Framework\TestCase
 {
-    use \Roolith\Traits\FileSystem;
+    use Roolith\Caching\Traits\FileSystem;
 
     public $fileDriver;
 
     public function setUp(): void
     {
-        $this->fileDriver = new \Roolith\Driver\FileDriver();
+        $this->fileDriver = new \Roolith\Caching\Driver\FileDriver();
     }
 
     private function init()
@@ -24,14 +24,14 @@ class FileDriverTest extends \PHPUnit\Framework\TestCase
 
     public function testShouldBeAnInstanceOfDriver()
     {
-        $this->assertInstanceOf(\Roolith\Driver\Driver::class, $this->fileDriver);
+        $this->assertInstanceOf(\Roolith\Caching\Driver\Driver::class, $this->fileDriver);
     }
 
     public function testShouldImplementDriverInterface()
     {
-        $reflectionClass = new ReflectionClass(\Roolith\Driver\FileDriver::class);
+        $reflectionClass = new ReflectionClass(\Roolith\Caching\Driver\FileDriver::class);
 
-        $this->assertEquals('Roolith\Interfaces\DriverInterface', $reflectionClass->getInterfaceNames()[0]);
+        $this->assertEquals('Roolith\Caching\Interfaces\DriverInterface', $reflectionClass->getInterfaceNames()[0]);
     }
 
     public function testShouldAddConfig()

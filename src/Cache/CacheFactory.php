@@ -1,5 +1,5 @@
 <?php
-namespace Roolith\Cache;
+namespace Roolith\Caching\Cache;
 
 
 class CacheFactory

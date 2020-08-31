@@ -15,7 +15,7 @@ You may choose any method
 <?php
 define('ROOLITH_CACHE_DIR', __DIR__. '/cache');
 
-use Roolith\Cache\CacheFactory;
+use Roolith\Caching\Cache\CacheFactory;
 
 // will save cache
 CacheFactory::put('a', 'b', 3600);
@@ -39,7 +39,7 @@ CacheFactory::flush();
 ### Method 2: Cache
 ```php
 <?php
-use Roolith\Cache\Cache;
+use Roolith\Caching\Cache\Cache;
 
 $cache = new Cache();
 $cache->driver('file', ['dir' => __DIR__. '/cache']);
@@ -50,8 +50,8 @@ print_r($cache->get('foo'));
 ### Method 3: PSR-6
 ```php
 <?php
-use Roolith\Driver\FileDriver;
-use Roolith\Cache\Pool;
+use Roolith\Caching\Driver\FileDriver;
+use Roolith\Caching\Cache\Pool;
 
 $fileDriver = new FileDriver(['dir' => __DIR__. '/cache']);
 $pool = new Pool($fileDriver);
@@ -68,8 +68,8 @@ print_r($item->get());
 ### Method 4: PSR-16
 ```php
 <?php
-use Roolith\Cache\SimpleCache;
-use Roolith\Driver\FileDriver;
+use Roolith\Caching\Cache\SimpleCache;
+use Roolith\Caching\Driver\FileDriver;
 
 $fileDriver = new FileDriver(['dir' => __DIR__. '/cache']);
 $simpleCache = new SimpleCache($fileDriver);

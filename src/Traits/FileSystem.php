@@ -1,5 +1,5 @@
 <?php
-namespace Roolith\Traits;
+namespace Roolith\Caching\Traits;
 
 
 use Exception;

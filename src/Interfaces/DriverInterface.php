@@ -1,5 +1,5 @@
 <?php
-namespace Roolith\Interfaces;
+namespace Roolith\Caching\Interfaces;
 
 
 use Carbon\Carbon;

@@ -2,13 +2,13 @@
 
 class CacheTest extends \PHPUnit\Framework\TestCase
 {
-    use \Roolith\Traits\FileSystem;
+    use Roolith\Caching\Traits\FileSystem;
 
     public $cache;
 
     public function setUp(): void
     {
-        $this->cache = new Roolith\Cache\Cache();
+        $this->cache = new Roolith\Caching\Cache\Cache();
         $this->cache->driver('file', ['dir' => __DIR__. '/cache']);
     }
 

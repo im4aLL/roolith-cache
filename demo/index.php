@@ -1,9 +1,9 @@
 <?php
-use Roolith\Cache\Cache;
-use Roolith\Cache\CacheFactory;
-use Roolith\Cache\SimpleCache;
-use Roolith\Driver\FileDriver;
-use Roolith\Cache\Pool;
+use Roolith\Caching\Cache\Cache;
+use Roolith\Caching\Cache\CacheFactory;
+use Roolith\Caching\Cache\SimpleCache;
+use Roolith\Caching\Driver\FileDriver;
+use Roolith\Caching\Cache\Pool;
 
 require_once __DIR__. '/../vendor/autoload.php';
 

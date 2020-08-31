@@ -1,5 +1,5 @@
 <?php
-namespace Roolith\Cache;
+namespace Roolith\Caching\Cache;
 
 use Carbon\Carbon;
 use Carbon\CarbonInterval;
@@ -7,7 +7,7 @@ use DateInterval;
 use DateTime;
 use DateTimeInterface;
 use Psr\Cache\CacheItemInterface;
-use Roolith\Cache\Psr6\InvalidArgumentException;
+use Roolith\Caching\Cache\Psr6\InvalidArgumentException;
 
 class Item implements CacheItemInterface
 {

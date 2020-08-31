@@ -1,10 +1,10 @@
 <?php
-namespace Roolith\Cache;
+namespace Roolith\Caching\Cache;
 
 use Carbon\Carbon;
 use Psr\SimpleCache\CacheInterface;
-use Roolith\Cache\Psr16\InvalidArgumentException;
-use Roolith\Interfaces\DriverInterface;
+use Roolith\Caching\Cache\Psr16\InvalidArgumentException;
+use Roolith\Caching\Interfaces\DriverInterface;
 
 class SimpleCache implements CacheInterface
 {

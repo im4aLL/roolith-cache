@@ -1,11 +1,11 @@
 <?php
-namespace Roolith\Cache;
+namespace Roolith\Caching\Cache;
 
 
 use Psr\Cache\CacheItemInterface;
-use Roolith\Cache\Psr6\InvalidArgumentException;
-use Roolith\Interfaces\CacheItemPoolInterface;
-use Roolith\Interfaces\DriverInterface;
+use Roolith\Caching\Cache\Psr6\InvalidArgumentException;
+use Roolith\Caching\Interfaces\CacheItemPoolInterface;
+use Roolith\Caching\Interfaces\DriverInterface;
 
 class Pool implements CacheItemPoolInterface
 {

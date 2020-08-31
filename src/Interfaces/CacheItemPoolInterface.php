@@ -1,7 +1,5 @@
 <?php
-
-
-namespace Roolith\Interfaces;
+namespace Roolith\Caching\Interfaces;
 
 
 interface CacheItemPoolInterface extends \Psr\Cache\CacheItemPoolInterface

@@ -1,10 +1,10 @@
 <?php
-namespace Roolith\Driver;
+namespace Roolith\Caching\Driver;
 
 
 use Carbon\Carbon;
-use Roolith\Interfaces\DriverInterface;
-use Roolith\Traits\FileSystem;
+use Roolith\Caching\Interfaces\DriverInterface;
+use Roolith\Caching\Traits\FileSystem;
 
 class FileDriver extends Driver implements DriverInterface
 {

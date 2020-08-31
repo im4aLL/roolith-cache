@@ -9,7 +9,7 @@ class ItemTest extends \PHPUnit\Framework\TestCase
 
     public function setUp(): void
     {
-        $this->item = new \Roolith\Cache\Item('foo', 1);
+        $this->item = new \Roolith\Caching\Cache\Item('foo', 1);
     }
 
     public function testShouldGetKey()
@@ -45,7 +45,7 @@ class ItemTest extends \PHPUnit\Framework\TestCase
         $this->item->expiresAt(Carbon::now());
         $this->assertInstanceOf(Carbon::class, $this->item->getExpiration());
 
-        $this->expectException(\Roolith\Cache\Psr6\InvalidArgumentException::class);
+        $this->expectException(\Roolith\Caching\Cache\Psr6\InvalidArgumentException::class);
         $this->item->expiresAt('222');
     }
 

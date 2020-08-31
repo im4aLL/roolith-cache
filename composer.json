@@ -18,7 +18,9 @@
         "phpunit/phpunit": "^9.2"
     },
     "autoload": {
-        "psr-4": {"Roolith\\": "src/"}
+        "psr-4": {
+            "Roolith\\Caching\\": "src/"
+        }
     },
     "version": "1.0.0"
 }

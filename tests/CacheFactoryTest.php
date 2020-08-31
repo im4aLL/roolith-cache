@@ -1,12 +1,12 @@
 <?php
 
-use Roolith\Cache\CacheFactory;
+use Roolith\Caching\Cache\CacheFactory;
 
 define('ROOLITH_CACHE_DIR', __DIR__. '/cache');
 
 class CacheFactoryTest extends \PHPUnit\Framework\TestCase
 {
-    use \Roolith\Traits\FileSystem;
+    use Roolith\Caching\Traits\FileSystem;
 
     public function tearDown(): void
     {
