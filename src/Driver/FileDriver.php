@@ -36,13 +36,49 @@ class FileDriver extends Driver implements DriverInterface
     public function store($key, $value, Carbon $expiration)
     {
         $filename = $this->getFilenameByKey($key);
+        $path = $this->cacheDir.'/'.$filename;
         $compressData = $this->compress($key, $value, $expiration);
+        $tmpPath = $path.'.'.uniqid('', true).'.tmp';
 
-        if (file_put_contents($this->cacheDir.'/'.$filename, $compressData) !== false) {
+        set_error_handler(function () {
             return true;
-        }
+        });
 
-        return false;
+        try {
+            if (file_put_contents($tmpPath, $compressData, LOCK_EX) === false) {
+                $this->unlinkQuietly($tmpPath);
+
+                return false;
+            }
+
+            if (!rename($tmpPath, $path)) {
+                $this->unlinkQuietly($tmpPath);
+
+                return false;
+            }
+
+            return true;
+        } catch (\Throwable $e) {
+            $this->unlinkQuietly($tmpPath);
+
+            return false;
+        } finally {
+            restore_error_handler();
+        }
+    }
+
+    /**
+     * Unlink a temp file without emitting warnings.
+     * Caller already holds a error handler, plus is_file guard avoids races.
+     *
+     * @param string $path
+     * @return void
+     */
+    private function unlinkQuietly($path)
+    {
+        if (is_file($path)) {
+            unlink($path);
+        }
     }
 
     /**
@@ -135,7 +171,7 @@ class FileDriver extends Driver implements DriverInterface
      */
     public function flush()
     {
-        return $this->deleteFilesInDir($this->cacheDir);
+        return $this->deleteFilesInDir($this->cacheDir, '*.'.$this->getCacheFileExtension());
     }
 
     /**
@@ -215,6 +251,8 @@ class FileDriver extends Driver implements DriverInterface
     /**
      * Read cache file without emitting warnings.
      *
+     * Uses a shared lock so concurrent atomic writes stay consistent.
+     *
      * @param string $path
      * @return string|false
      */
@@ -229,7 +267,22 @@ class FileDriver extends Driver implements DriverInterface
         });
 
         try {
-            $contents = file_get_contents($path);
+            $handle = fopen($path, 'rb');
+
+            if ($handle === false) {
+                return false;
+            }
+
+            try {
+                if (!flock($handle, LOCK_SH)) {
+                    return false;
+                }
+
+                $contents = stream_get_contents($handle);
+                flock($handle, LOCK_UN);
+            } finally {
+                fclose($handle);
+            }
         } finally {
             restore_error_handler();
         }

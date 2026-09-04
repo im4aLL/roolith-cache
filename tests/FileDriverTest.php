@@ -359,4 +359,109 @@ class FileDriverTest extends \PHPUnit\Framework\TestCase
 
         $this->clean();
     }
+
+    public function testStoreWritesAtomicallyWithoutTempLeftovers()
+    {
+        $this->init();
+        $config = $this->fileDriver->getConfig();
+        $dir = $config['dir'];
+
+        $this->assertTrue($this->fileDriver->store('atomic-foo', 'atomic-value', \Carbon\Carbon::now()->addHours(1)));
+        $this->assertEquals('atomic-value', $this->fileDriver->get('atomic-foo'));
+
+        $tmpFiles = glob($dir.'/*.tmp');
+        $this->assertIsArray($tmpFiles);
+        $this->assertCount(0, $tmpFiles);
+
+        $reflection = new ReflectionMethod(\Roolith\Caching\Driver\FileDriver::class, 'getFilenameByKey');
+        $reflection->setAccessible(true);
+        $filename = $reflection->invoke($this->fileDriver, 'atomic-foo');
+        $this->assertTrue(is_file($dir.'/'.$filename));
+
+        $this->clean();
+    }
+
+    public function testConcurrentWriteSmokeTest()
+    {
+        $this->init();
+        $config = $this->fileDriver->getConfig();
+        $dir = $config['dir'];
+
+        for ($i = 0; $i < 25; $i++) {
+            $this->assertTrue($this->fileDriver->store('concurrent-foo', 'value-'.$i, \Carbon\Carbon::now()->addHours(1)));
+            $this->assertEquals('value-'.$i, $this->fileDriver->get('concurrent-foo'));
+        }
+
+        $this->assertEquals('value-24', $this->fileDriver->get('concurrent-foo'));
+
+        $tmpFiles = glob($dir.'/*.tmp');
+        $this->assertIsArray($tmpFiles);
+        $this->assertCount(0, $tmpFiles);
+
+        $this->clean();
+    }
+
+    public function testFlushOnlyDeletesRcacheFiles()
+    {
+        $this->init();
+        $config = $this->fileDriver->getConfig();
+        $dir = $config['dir'];
+
+        $this->fileDriver->store('foo', 1, \Carbon\Carbon::now()->addHours(1));
+        $this->fileDriver->store('foo2', 1, \Carbon\Carbon::now()->addHours(1));
+
+        file_put_contents($dir.'/keep.txt', 'do-not-delete');
+        file_put_contents($dir.'/keep.php', '<?php // do-not-delete');
+        mkdir($dir.'/subdir');
+        file_put_contents($dir.'/subdir/nested.txt', 'nested');
+
+        $this->assertTrue($this->fileDriver->flush());
+
+        $this->assertFalse($this->fileDriver->has('foo'));
+        $this->assertFalse($this->fileDriver->has('foo2'));
+        $this->assertSame('do-not-delete', file_get_contents($dir.'/keep.txt'));
+        $this->assertSame('<?php // do-not-delete', file_get_contents($dir.'/keep.php'));
+        $this->assertTrue(is_file($dir.'/subdir/nested.txt'));
+        $this->assertSame([], glob($dir.'/*.rcache') ?: []);
+
+        $this->clean();
+    }
+
+    public function testFlushScopesToConfiguredExtension()
+    {
+        $dir = __DIR__.'/cache';
+        $this->fileDriver->setConfig(['dir' => $dir, 'ext' => 'datastore']);
+        $this->fileDriver->bootstrap();
+
+        $this->fileDriver->store('custom-foo', 1, \Carbon\Carbon::now()->addHours(1));
+        file_put_contents($dir.'/plain.rcache', 'other-ext-payload');
+        file_put_contents($dir.'/keep.txt', 'do-not-delete');
+
+        $this->assertTrue($this->fileDriver->flush());
+
+        $this->assertFalse($this->fileDriver->has('custom-foo'));
+        $this->assertTrue(is_file($dir.'/plain.rcache'));
+        $this->assertSame('do-not-delete', file_get_contents($dir.'/keep.txt'));
+
+        $this->clean();
+    }
+
+    public function testDeleteFilesInDirSkipsDirectoriesAndDotFiles()
+    {
+        $this->init();
+        $config = $this->fileDriver->getConfig();
+        $dir = $config['dir'];
+
+        mkdir($dir.'/fake.rcache');
+        file_put_contents($dir.'/.hidden.rcache', 'hidden');
+
+        $this->assertTrue($this->deleteFilesInDir($dir));
+        $this->assertTrue(is_dir($dir.'/fake.rcache'));
+        $this->assertTrue(is_file($dir.'/.hidden.rcache'));
+
+        unlink($dir.'/.hidden.rcache');
+        rmdir($dir.'/fake.rcache');
+
+        $this->clean();
+    }
 }
