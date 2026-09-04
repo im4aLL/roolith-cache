@@ -118,7 +118,7 @@ class FileDriver extends Driver implements DriverInterface
      */
     public function isValid($value)
     {
-        return is_array($value) && isset($value['key']) && isset($value['value']) && isset($value['expiration']);
+        return is_array($value) && isset($value['key']) && array_key_exists('value', $value) && isset($value['expiration']);
     }
 
     /**

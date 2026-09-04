@@ -27,6 +27,29 @@ class ItemTest extends \PHPUnit\Framework\TestCase
         $this->assertIsBool($this->item->isHit());
     }
 
+    public function testShouldDefaultToMiss()
+    {
+        $item = new \Roolith\Caching\Cache\Item('foo', 1);
+
+        $this->assertFalse($item->isHit());
+    }
+
+    public function testShouldTrackHitFlagInsteadOfTruthiness()
+    {
+        $item = new \Roolith\Caching\Cache\Item('foo', 0);
+
+        $this->assertFalse($item->isHit());
+
+        $item->setHit(true);
+
+        $this->assertTrue($item->isHit());
+        $this->assertSame(0, $item->get());
+
+        $item->setHit(false);
+
+        $this->assertFalse($item->isHit());
+    }
+
     public function testShouldSetValue()
     {
         $this->item->set(2);
@@ -59,5 +82,25 @@ class ItemTest extends \PHPUnit\Framework\TestCase
 
         $this->item->expiresAfter(new DateInterval("P1Y2M3DT4H5M6S"));
         $this->assertInstanceOf(Carbon::class, $this->item->getExpiration());
+    }
+
+    public function testShouldReturnSelfFromExpiresAfterForChaining()
+    {
+        $result = $this->item->set(1)->expiresAfter(3600);
+
+        $this->assertSame($this->item, $result);
+        $this->assertInstanceOf(Carbon::class, $this->item->getExpiration());
+    }
+
+    public function testShouldFallbackToDefaultExpirationWhenExpirationIsNull()
+    {
+        $item = new \Roolith\Caching\Cache\Item('fresh', 1);
+
+        $this->assertInstanceOf(Carbon::class, $item->getExpiration());
+        $this->assertEquals($item->getDefaultExpiration(), $item->getExpiration());
+
+        $item->expiresAfter(null);
+
+        $this->assertEquals($item->getDefaultExpiration(), $item->getExpiration());
     }
 }

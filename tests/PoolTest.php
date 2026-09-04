@@ -125,6 +125,53 @@ class PoolTest extends \PHPUnit\Framework\TestCase
         $this->pool->getItem('{aaaa');
     }
 
+    public function testShouldMissForUnknownKey()
+    {
+        $item = $this->pool->getItem('missing-key');
+
+        $this->assertFalse($item->isHit());
+        $this->assertNull($item->get());
+    }
+
+    public function testShouldSaveWithoutExplicitExpiration()
+    {
+        $item = $this->pool->getItem('no-expiry');
+        $item->set('value');
+
+        $this->assertTrue($this->pool->save($item));
+
+        $fetched = $this->pool->getItem('no-expiry');
+
+        $this->assertTrue($fetched->isHit());
+        $this->assertEquals('value', $fetched->get());
+
+        $this->pool->clear();
+    }
+
+    public function testShouldRoundTripFalsyValuesWithHitTrue()
+    {
+        $cases = [
+            'int-zero' => 0,
+            'bool-false' => false,
+            'null' => null,
+            'empty-array' => [],
+            'empty-string' => '',
+        ];
+
+        foreach ($cases as $key => $value) {
+            $item = $this->pool->getItem($key);
+            $item->set($value)->expiresAfter(3600);
+            $this->assertTrue($this->pool->save($item));
+
+            $fetched = $this->pool->getItem($key);
+
+            $this->assertTrue($fetched->isHit(), 'Failed hit for key: '.$key);
+            $this->assertSame($value, $fetched->get(), 'Failed value for key: '.$key);
+        }
+
+        $this->pool->clear();
+    }
+
     public function tearDown(): void
     {
         $this->deleteDir(__DIR__. '/cache');

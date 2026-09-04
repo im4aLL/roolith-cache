@@ -15,6 +15,7 @@ class Item implements CacheItemInterface
     protected $value;
     protected $expiration;
     protected $defaultExpiration;
+    protected $isHit = false;
 
     public function __construct($key, $value = null)
     {
@@ -44,7 +45,20 @@ class Item implements CacheItemInterface
      */
     public function isHit()
     {
-        return $this->get() ? true : false;
+        return $this->isHit;
+    }
+
+    /**
+     * Set hit flag.
+     *
+     * @param bool $isHit
+     * @return $this
+     */
+    public function setHit($isHit)
+    {
+        $this->isHit = (bool) $isHit;
+
+        return $this;
     }
 
     /**
@@ -87,6 +101,8 @@ class Item implements CacheItemInterface
         } else {
             $this->expiration = $this->getDefaultExpiration();
         }
+
+        return $this;
     }
 
     /**
@@ -94,6 +110,10 @@ class Item implements CacheItemInterface
      */
     public function getExpiration()
     {
+        if ($this->expiration === null) {
+            return $this->getDefaultExpiration();
+        }
+
         return $this->expiration;
     }
 

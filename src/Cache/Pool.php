@@ -2,6 +2,7 @@
 namespace Roolith\Caching\Cache;
 
 
+use Carbon\Carbon;
 use Psr\Cache\CacheItemInterface;
 use Roolith\Caching\Cache\Psr6\InvalidArgumentException;
 use Roolith\Caching\Interfaces\CacheItemPoolInterface;
@@ -27,7 +28,21 @@ class Pool implements CacheItemPoolInterface
     {
         $key = $this->validateKey($key);
 
-        return new Item($key, $this->driver->get($key));
+        $raw = $this->driver->getRaw($key);
+        $isHit = false;
+        $value = null;
+
+        if ($this->driver->isValid($raw)) {
+            if (!$this->driver->isExpired($raw)) {
+                $isHit = true;
+                $value = $raw['value'];
+            }
+        }
+
+        $item = new Item($key, $value);
+        $item->setHit($isHit);
+
+        return $item;
     }
 
     /**
@@ -93,7 +108,19 @@ class Pool implements CacheItemPoolInterface
      */
     public function save(CacheItemInterface $item)
     {
-        return $this->driver->store($item->getKey(), $item->get(), $item->getExpiration());
+        $expiration = $item->getExpiration();
+
+        if ($expiration === null) {
+            if (method_exists($item, 'getDefaultExpiration')) {
+                $expiration = $item->getDefaultExpiration();
+            }
+
+            if ($expiration === null) {
+                $expiration = Carbon::now()->addMonths(1);
+            }
+        }
+
+        return $this->driver->store($item->getKey(), $item->get(), $expiration);
     }
 
     /**
