@@ -1,22 +1,26 @@
 <?php
-use Roolith\Driver\FileDriver;
+use Roolith\Caching\Cache\Item;
+use Roolith\Caching\Cache\Pool;
+use Roolith\Caching\Cache\Psr6\InvalidArgumentException;
+use Roolith\Caching\Driver\FileDriver;
+use Roolith\Caching\Traits\FileSystem;
 
 class PoolTest extends \PHPUnit\Framework\TestCase
 {
-    use \Roolith\Traits\FileSystem;
+    use FileSystem;
 
     public $pool;
 
     public function setUp(): void
     {
-        $this->pool = new \Roolith\Cache\Pool(new FileDriver(['dir' => __DIR__. '/cache']));
+        $this->pool = new Pool(new FileDriver(['dir' => __DIR__. '/cache']));
     }
 
     public function testShouldGetItem()
     {
         $item = $this->pool->getItem('foo');
 
-        $this->assertInstanceOf(\Roolith\Cache\Item::class, $item);
+        $this->assertInstanceOf(Item::class, $item);
     }
 
     public function testShouldGetMultipleItems()
@@ -117,7 +121,7 @@ class PoolTest extends \PHPUnit\Framework\TestCase
 
     public function testShouldGiveInvalidArgumentExceptionForInvalidKey()
     {
-        $this->expectException(\Roolith\Cache\Psr6\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->pool->getItem('{aaaa');
     }
 

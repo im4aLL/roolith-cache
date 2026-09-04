@@ -1,8 +1,9 @@
 <?php
 use PHPUnit\Framework\TestCase;
-use Roolith\Cache\SimpleCache;
-use Roolith\Driver\FileDriver;
-use Roolith\Traits\FileSystem;
+use Roolith\Caching\Cache\Psr16\InvalidArgumentException;
+use Roolith\Caching\Cache\SimpleCache;
+use Roolith\Caching\Driver\FileDriver;
+use Roolith\Caching\Traits\FileSystem;
 
 class SimpleCacheTest extends TestCase
 {
@@ -91,7 +92,7 @@ class SimpleCacheTest extends TestCase
 
     public function testShouldGiveInvalidArgumentException()
     {
-        $this->expectException(\Roolith\Cache\Psr16\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->simpleCache->get('(123');
     }
 }
