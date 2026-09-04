@@ -122,4 +122,107 @@ class SimpleCacheTest extends TestCase
         $this->assertTrue($this->simpleCache->has('p1d-key'));
         $this->assertTrue($this->simpleCache->has('pt2h-key'));
     }
+
+    public function testShouldUseDefaultTtlWhenNull()
+    {
+        $this->assertTrue($this->simpleCache->set('null-ttl-key', 'value', null));
+        $this->assertEquals('value', $this->simpleCache->get('null-ttl-key'));
+        $this->assertTrue($this->simpleCache->has('null-ttl-key'));
+
+        $this->assertTrue($this->simpleCache->set('default-ttl-key', 'value'));
+        $this->assertEquals('value', $this->simpleCache->get('default-ttl-key'));
+        $this->assertTrue($this->simpleCache->has('default-ttl-key'));
+    }
+
+    public function testShouldExpireImmediatelyWithZeroTtl()
+    {
+        $this->assertTrue($this->simpleCache->set('zero-ttl-key', 'value', 0));
+        $this->assertEquals('fallback', $this->simpleCache->get('zero-ttl-key', 'fallback'));
+        $this->assertFalse($this->simpleCache->has('zero-ttl-key'));
+    }
+
+    public function testShouldExpireImmediatelyWithNegativeTtl()
+    {
+        $this->assertTrue($this->simpleCache->set('negative-ttl-key', 'value', -10));
+        $this->assertEquals('fallback', $this->simpleCache->get('negative-ttl-key', 'fallback'));
+        $this->assertFalse($this->simpleCache->has('negative-ttl-key'));
+    }
+
+    public function testShouldThrowForStringTtl()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->simpleCache->set('string-ttl-key', 'value', '3600');
+    }
+
+    public function testShouldThrowForInvalidTtlTypes()
+    {
+        foreach ([1.5, true, ['ttl'], new \stdClass()] as $invalidTtl) {
+            try {
+                $this->simpleCache->set('invalid-ttl-key', 'value', $invalidTtl);
+                $this->fail('Expected InvalidArgumentException for TTL: '.var_export($invalidTtl, true));
+            } catch (InvalidArgumentException $e) {
+                $this->assertInstanceOf(InvalidArgumentException::class, $e);
+            }
+        }
+    }
+
+    public function testShouldThrowForNonIterableBulkInput()
+    {
+        foreach (['getMultiple', 'setMultiple', 'deleteMultiple'] as $method) {
+            try {
+                if ($method === 'setMultiple') {
+                    $this->simpleCache->$method('not-iterable');
+                } else {
+                    $this->simpleCache->$method('not-iterable');
+                }
+                $this->fail('Expected InvalidArgumentException for '.$method.' with string input');
+            } catch (InvalidArgumentException $e) {
+                $this->assertInstanceOf(InvalidArgumentException::class, $e);
+            }
+        }
+    }
+
+    public function testShouldThrowForInvalidBulkKeys()
+    {
+        try {
+            $this->simpleCache->getMultiple(['valid-key', '(123'], 'fallback');
+            $this->fail('Expected InvalidArgumentException for getMultiple with invalid key');
+        } catch (InvalidArgumentException $e) {
+            $this->assertInstanceOf(InvalidArgumentException::class, $e);
+        }
+
+        try {
+            $this->simpleCache->setMultiple(['valid-key' => 1, '(123' => 2], 3600);
+            $this->fail('Expected InvalidArgumentException for setMultiple with invalid key');
+        } catch (InvalidArgumentException $e) {
+            $this->assertInstanceOf(InvalidArgumentException::class, $e);
+        }
+
+        try {
+            $this->simpleCache->deleteMultiple(['valid-key', '(123']);
+            $this->fail('Expected InvalidArgumentException for deleteMultiple with invalid key');
+        } catch (InvalidArgumentException $e) {
+            $this->assertInstanceOf(InvalidArgumentException::class, $e);
+        }
+    }
+
+    public function testShouldThrowForInvalidTtlInSetMultiple()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->simpleCache->setMultiple(['bulk-key' => 'value'], '3600');
+    }
+
+    public function testShouldAcceptTraversableInBulkMethods()
+    {
+        $values = new \ArrayObject(['trav-foo' => 1, 'trav-bar' => 2]);
+        $this->assertTrue($this->simpleCache->setMultiple($values, 3600));
+
+        $result = $this->simpleCache->getMultiple(new \ArrayObject(['trav-foo', 'trav-bar', 'trav-missing']), 'fallback');
+        $this->assertSame(1, $result['trav-foo']);
+        $this->assertSame(2, $result['trav-bar']);
+        $this->assertSame('fallback', $result['trav-missing']);
+
+        $this->assertTrue($this->simpleCache->deleteMultiple(new \ArrayObject(['trav-foo', 'trav-bar'])));
+        $this->assertFalse($this->simpleCache->has('trav-foo'));
+    }
 }

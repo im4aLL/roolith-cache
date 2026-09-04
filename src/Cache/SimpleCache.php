@@ -11,6 +11,8 @@ class SimpleCache implements CacheInterface
 {
     protected $driver;
 
+    const DEFAULT_TTL_HOURS = 5;
+
     public function __construct(DriverInterface $driver)
     {
         $this->driver = $driver;
@@ -41,13 +43,7 @@ class SimpleCache implements CacheInterface
     {
         $key = $this->validateKey($key);
 
-        $expiration = Carbon::now()->addHours(5);
-
-        if ($ttl instanceof DateInterval) {
-            $expiration = Carbon::now()->add($ttl);
-        } elseif (is_int($ttl)) {
-            $expiration = Carbon::now()->addSeconds($ttl);
-        }
+        $expiration = $this->resolveExpiration($ttl);
 
         return $this->driver->store($key, $value, $expiration);
     }
@@ -75,9 +71,14 @@ class SimpleCache implements CacheInterface
      */
     public function getMultiple($keys, $default = null)
     {
+        if (!is_array($keys) && !$keys instanceof \Traversable) {
+            throw new InvalidArgumentException('Keys must be iterable: '.var_export($keys, true));
+        }
+
         $result = [];
 
         foreach ($keys as $key) {
+            $key = $this->validateKey($key);
             $result[$key] = $this->get($key, $default);
         }
 
@@ -89,6 +90,13 @@ class SimpleCache implements CacheInterface
      */
     public function setMultiple($values, $ttl = null)
     {
+        if (!is_array($values) && !$values instanceof \Traversable) {
+            throw new InvalidArgumentException('Values must be iterable: '.var_export($values, true));
+        }
+
+        // Validate TTL upfront so invalid TTL fails before partial writes.
+        $this->resolveExpiration($ttl);
+
         $result = true;
 
         foreach ($values as $key => $value) {
@@ -105,6 +113,10 @@ class SimpleCache implements CacheInterface
      */
     public function deleteMultiple($keys)
     {
+        if (!is_array($keys) && !$keys instanceof \Traversable) {
+            throw new InvalidArgumentException('Keys must be iterable: '.var_export($keys, true));
+        }
+
         $result = true;
 
         foreach ($keys as $key) {
@@ -124,6 +136,27 @@ class SimpleCache implements CacheInterface
         $key = $this->validateKey($key);
 
         return $this->driver->has($key);
+    }
+
+    private function resolveExpiration($ttl)
+    {
+        if ($ttl === null) {
+            return Carbon::now()->addHours(self::DEFAULT_TTL_HOURS);
+        }
+
+        if ($ttl instanceof DateInterval) {
+            return Carbon::now()->add($ttl);
+        }
+
+        if (is_int($ttl)) {
+            if ($ttl <= 0) {
+                return Carbon::now()->subSecond();
+            }
+
+            return Carbon::now()->addSeconds($ttl);
+        }
+
+        throw new InvalidArgumentException('Invalid TTL: '.var_export($ttl, true));
     }
 
     private function validateKey($key)
