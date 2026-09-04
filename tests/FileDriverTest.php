@@ -180,6 +180,57 @@ class FileDriverTest extends \PHPUnit\Framework\TestCase
         $this->clean();
     }
 
+    public function testShouldNotCollideSimilarKeys()
+    {
+        $this->init();
+
+        $this->fileDriver->store('foo/bar', 'slash', \Carbon\Carbon::now()->addHours(1));
+        $this->fileDriver->store('foo-bar', 'dash', \Carbon\Carbon::now()->addHours(1));
+        $this->fileDriver->store('FOO-BAR', 'upper', \Carbon\Carbon::now()->addHours(1));
+
+        $this->assertEquals('slash', $this->fileDriver->get('foo/bar'));
+        $this->assertEquals('dash', $this->fileDriver->get('foo-bar'));
+        $this->assertEquals('upper', $this->fileDriver->get('FOO-BAR'));
+
+        $reflection = new ReflectionMethod(\Roolith\Caching\Driver\FileDriver::class, 'getFilenameByKey');
+        $reflection->setAccessible(true);
+        $fileSlash = $reflection->invoke($this->fileDriver, 'foo/bar');
+        $fileDash = $reflection->invoke($this->fileDriver, 'foo-bar');
+        $fileUpper = $reflection->invoke($this->fileDriver, 'FOO-BAR');
+
+        $this->assertNotEquals($fileSlash, $fileDash);
+        $this->assertNotEquals($fileSlash, $fileUpper);
+        $this->assertNotEquals($fileDash, $fileUpper);
+
+        foreach ([$fileSlash, $fileDash, $fileUpper] as $filename) {
+            $this->assertMatchesRegularExpression('/^[a-z0-9-]+\-[0-9a-f]{40}\.rcache$/', $filename);
+            $this->assertStringNotContainsString('/', $filename);
+        }
+
+        $this->clean();
+    }
+
+    public function testShouldWhitelistCacheFileExtension()
+    {
+        $this->fileDriver->setConfig(['dir' => __DIR__.'/cache', 'ext' => 'datastore']);
+        $reflection = new ReflectionMethod(\Roolith\Caching\Driver\FileDriver::class, 'getFilenameByKey');
+        $reflection->setAccessible(true);
+        $this->assertStringEndsWith('.datastore', $reflection->invoke($this->fileDriver, 'foo'));
+
+        $invalidExts = ['../php', 'r-cache', 'a/b', '.rcache', 'foo.bar', 'foo bar', '', 'php/../', null, 123, []];
+        foreach ($invalidExts as $ext) {
+            $this->fileDriver->setConfig(['dir' => __DIR__.'/cache', 'ext' => $ext]);
+            $extReflection = new ReflectionMethod(\Roolith\Caching\Driver\FileDriver::class, 'getCacheFileExtension');
+            $extReflection->setAccessible(true);
+            $this->assertEquals('rcache', $extReflection->invoke($this->fileDriver), 'Failed for ext: '.var_export($ext, true));
+        }
+
+        $this->fileDriver->setConfig(['dir' => __DIR__.'/cache']);
+        $extReflection = new ReflectionMethod(\Roolith\Caching\Driver\FileDriver::class, 'getCacheFileExtension');
+        $extReflection->setAccessible(true);
+        $this->assertEquals('rcache', $extReflection->invoke($this->fileDriver));
+    }
+
     public function testIsExpiredIsDefensiveAgainstMissingExpiration()
     {
         $this->assertTrue($this->fileDriver->isExpired(false));

@@ -43,6 +43,20 @@ abstract class Driver
 
     public function sanitizeKeyString($string)
     {
-        return strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $string)));
+        $string = (string) $string;
+        $prefix = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $string), '-'));
+
+        if ($prefix === '') {
+            $prefix = 'key';
+        }
+
+        $prefix = substr($prefix, 0, 32);
+        $prefix = rtrim($prefix, '-');
+
+        if ($prefix === '') {
+            $prefix = 'key';
+        }
+
+        return $prefix.'-'.sha1($string);
     }
 }

@@ -221,7 +221,15 @@ class FileDriver extends Driver implements DriverInterface
     {
         $config = $this->getConfig();
 
-        return isset($config['ext']) ? $config['ext'] : 'rcache';
+        if (isset($config['ext']) && is_string($config['ext'])) {
+            $ext = trim($config['ext']);
+
+            if ($ext !== '' && preg_match('/^[A-Za-z0-9]+$/', $ext)) {
+                return $ext;
+            }
+        }
+
+        return 'rcache';
     }
 
     /**
