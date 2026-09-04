@@ -93,12 +93,14 @@ class Item implements CacheItemInterface
      */
     public function expiresAfter($time): static
     {
-        if ($time instanceof DateInterval) {
+        if ($time === null) {
+            $this->expiration = $this->getDefaultExpiration();
+        } elseif ($time instanceof DateInterval) {
             $this->expiration = Carbon::now()->add($time);
         } elseif (is_int($time)) {
             $this->expiration = Carbon::now()->addSeconds($time);
         } else {
-            $this->expiration = $this->getDefaultExpiration();
+            throw new InvalidArgumentException('expiresAfter should be int, DateInterval or null: '.var_export($time, true));
         }
 
         return $this;

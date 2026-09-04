@@ -225,4 +225,28 @@ class SimpleCacheTest extends TestCase
         $this->assertTrue($this->simpleCache->deleteMultiple(new \ArrayObject(['trav-foo', 'trav-bar'])));
         $this->assertFalse($this->simpleCache->has('trav-foo'));
     }
+
+    public function testShouldRoundTripFalsyValues()
+    {
+        $cases = [
+            'false-key' => false,
+            'zero-int' => 0,
+            'empty-str' => '',
+            'null-val' => null,
+            'empty-arr' => [],
+        ];
+
+        foreach ($cases as $key => $value) {
+            $this->assertTrue($this->simpleCache->set($key, $value, 3600));
+            $this->assertTrue($this->simpleCache->has($key), 'Failed has for key: '.$key);
+            $this->assertSame($value, $this->simpleCache->get($key, 'fallback'), 'Failed value for key: '.$key);
+        }
+    }
+
+    public function testShouldAcceptZeroStringAsKey()
+    {
+        $this->assertTrue($this->simpleCache->set('0', 'zero-value', 3600));
+        $this->assertTrue($this->simpleCache->has('0'));
+        $this->assertSame('zero-value', $this->simpleCache->get('0'));
+    }
 }

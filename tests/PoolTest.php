@@ -197,6 +197,25 @@ class PoolTest extends \PHPUnit\Framework\TestCase
         $this->pool->clear();
     }
 
+    public function testShouldAcceptZeroStringAsKey()
+    {
+        $item = $this->pool->getItem('0');
+        $item->set('zero-value')->expiresAfter(3600);
+        $this->assertTrue($this->pool->save($item));
+
+        $fetched = $this->pool->getItem('0');
+        $this->assertTrue($fetched->isHit());
+        $this->assertSame('zero-value', $fetched->get());
+
+        $this->pool->clear();
+    }
+
+    public function testShouldThrowForInvalidKeyInDeleteItems()
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->pool->deleteItems(['valid-key', '{bad']);
+    }
+
     public function tearDown(): void
     {
         $this->deleteDir(__DIR__. '/cache');

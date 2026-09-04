@@ -27,13 +27,13 @@ class SimpleCache implements CacheInterface
     {
         $key = $this->validateKey($key);
 
-        $value = $this->driver->get($key);
+        $raw = $this->driver->getRaw($key);
 
-        if ($value === false) {
-            return $default;
+        if ($this->driver->isValid($raw) && !$this->driver->isExpired($raw)) {
+            return $raw['value'];
         }
 
-        return $value;
+        return $default;
     }
 
     /**
@@ -161,7 +161,7 @@ class SimpleCache implements CacheInterface
 
     private function validateKey($key)
     {
-        if (!$key || is_null($key) || !is_string($key) || strpbrk($key, '{}()/\@:')) {
+        if (!is_string($key) || $key === '' || strpbrk($key, '{}()/\@:')) {
             throw new InvalidArgumentException('Invalid key: '.var_export($key, true));
         }
 

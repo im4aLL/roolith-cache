@@ -92,6 +92,10 @@ class Pool implements CacheItemPoolInterface
      */
     public function deleteItems(array $keys = []): bool
     {
+        foreach ($keys as $key) {
+            $this->validateKey($key);
+        }
+
         $result = true;
 
         foreach ($keys as $key) {
@@ -167,7 +171,7 @@ class Pool implements CacheItemPoolInterface
      */
     private function validateKey($key)
     {
-        if (!$key || is_null($key) || !is_string($key) || strpbrk($key, '{}()/\@:')) {
+        if (!is_string($key) || $key === '' || strpbrk($key, '{}()/\@:')) {
             throw new InvalidArgumentException('Invalid key: '.var_export($key, true));
         }
 

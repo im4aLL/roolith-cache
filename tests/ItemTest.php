@@ -124,4 +124,16 @@ class ItemTest extends \PHPUnit\Framework\TestCase
 
         $this->assertEquals($item->getDefaultExpiration(), $item->getExpiration());
     }
+
+    public function testShouldThrowForInvalidExpiresAfterTypes()
+    {
+        foreach (['3600', 1.5, true, ['ttl'], new \stdClass()] as $invalid) {
+            try {
+                $this->item->expiresAfter($invalid);
+                $this->fail('Expected InvalidArgumentException for expiresAfter: '.var_export($invalid, true));
+            } catch (\Roolith\Caching\Cache\Psr6\InvalidArgumentException $e) {
+                $this->assertInstanceOf(\Roolith\Caching\Cache\Psr6\InvalidArgumentException::class, $e);
+            }
+        }
+    }
 }
