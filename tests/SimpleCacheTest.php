@@ -57,9 +57,12 @@ class SimpleCacheTest extends TestCase
         $result = $this->simpleCache->getMultiple(['foo1', 'foo2', 'foo3'], 2);
 
         $this->assertCount(3, $result);
-        $this->assertEquals(1, $result[0]);
-        $this->assertEquals(1, $result[1]);
-        $this->assertEquals(2, $result[2]);
+        $this->assertArrayHasKey('foo1', $result);
+        $this->assertArrayHasKey('foo2', $result);
+        $this->assertArrayHasKey('foo3', $result);
+        $this->assertEquals(1, $result['foo1']);
+        $this->assertEquals(1, $result['foo2']);
+        $this->assertEquals(2, $result['foo3']);
     }
 
     public function testShouldStoreMultipleItems()
@@ -94,5 +97,29 @@ class SimpleCacheTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->simpleCache->get('(123');
+    }
+
+    public function testShouldPreserveKeysInGetMultiple()
+    {
+        $this->simpleCache->set('alpha', 'a', 3600);
+        $this->simpleCache->set('beta', 'b', 3600);
+
+        $result = $this->simpleCache->getMultiple(['alpha', 'beta', 'missing'], 'fallback');
+
+        $this->assertSame(['alpha', 'beta', 'missing'], array_keys($result));
+        $this->assertSame('a', $result['alpha']);
+        $this->assertSame('b', $result['beta']);
+        $this->assertSame('fallback', $result['missing']);
+    }
+
+    public function testShouldHandleDateIntervalTtlAsTotalDuration()
+    {
+        $this->assertTrue($this->simpleCache->set('p1d-key', 'value', new DateInterval('P1D')));
+        $this->assertTrue($this->simpleCache->set('pt2h-key', 'value', new DateInterval('PT2H')));
+
+        $this->assertEquals('value', $this->simpleCache->get('p1d-key'));
+        $this->assertEquals('value', $this->simpleCache->get('pt2h-key'));
+        $this->assertTrue($this->simpleCache->has('p1d-key'));
+        $this->assertTrue($this->simpleCache->has('pt2h-key'));
     }
 }

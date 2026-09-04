@@ -2,7 +2,6 @@
 namespace Roolith\Caching\Cache;
 
 use Carbon\Carbon;
-use Carbon\CarbonInterval;
 use DateInterval;
 use DateTime;
 use DateTimeInterface;
@@ -95,7 +94,7 @@ class Item implements CacheItemInterface
     public function expiresAfter($time)
     {
         if ($time instanceof DateInterval) {
-            $this->expiration = Carbon::now()->addSeconds(CarbonInterval::instance($time)->seconds);
+            $this->expiration = Carbon::now()->add($time);
         } elseif (is_int($time)) {
             $this->expiration = Carbon::now()->addSeconds($time);
         } else {

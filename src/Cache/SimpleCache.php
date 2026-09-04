@@ -2,7 +2,7 @@
 namespace Roolith\Caching\Cache;
 
 use Carbon\Carbon;
-use Carbon\CarbonInterval;
+use DateInterval;
 use Psr\SimpleCache\CacheInterface;
 use Roolith\Caching\Cache\Psr16\InvalidArgumentException;
 use Roolith\Caching\Interfaces\DriverInterface;
@@ -44,7 +44,7 @@ class SimpleCache implements CacheInterface
         $expiration = Carbon::now()->addHours(5);
 
         if ($ttl instanceof DateInterval) {
-            $expiration = Carbon::now()->addSeconds(CarbonInterval::instance($ttl)->seconds);
+            $expiration = Carbon::now()->add($ttl);
         } elseif (is_int($ttl)) {
             $expiration = Carbon::now()->addSeconds($ttl);
         }
@@ -78,8 +78,7 @@ class SimpleCache implements CacheInterface
         $result = [];
 
         foreach ($keys as $key) {
-            $v = $this->get($key);
-            $result[] = $v === null ? $default : $v;
+            $result[$key] = $this->get($key, $default);
         }
 
         return $result;

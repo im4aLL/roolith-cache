@@ -53,7 +53,7 @@ class Pool implements CacheItemPoolInterface
         $result = [];
 
         foreach ($keys as $key) {
-            $result[] = $this->getItem($key);
+            $result[$key] = $this->getItem($key);
         }
 
         return $result;

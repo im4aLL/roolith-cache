@@ -84,6 +84,27 @@ class ItemTest extends \PHPUnit\Framework\TestCase
         $this->assertInstanceOf(Carbon::class, $this->item->getExpiration());
     }
 
+    public function testShouldHandleDateIntervalAsTotalDuration()
+    {
+        $before = Carbon::now();
+
+        $item = new \Roolith\Caching\Cache\Item('p1d', 1);
+        $item->expiresAfter(new DateInterval('P1D'));
+        $expiration = $item->getExpiration();
+        $this->assertInstanceOf(Carbon::class, $expiration);
+        $this->assertGreaterThan(86000, $before->diffInSeconds($expiration));
+        $this->assertLessThanOrEqual(86400 + 5, $before->diffInSeconds($expiration));
+
+        $before = Carbon::now();
+
+        $item = new \Roolith\Caching\Cache\Item('pt2h', 1);
+        $item->expiresAfter(new DateInterval('PT2H'));
+        $expiration = $item->getExpiration();
+        $this->assertInstanceOf(Carbon::class, $expiration);
+        $this->assertGreaterThan(7100, $before->diffInSeconds($expiration));
+        $this->assertLessThanOrEqual(7200 + 5, $before->diffInSeconds($expiration));
+    }
+
     public function testShouldReturnSelfFromExpiresAfterForChaining()
     {
         $result = $this->item->set(1)->expiresAfter(3600);

@@ -28,6 +28,31 @@ class PoolTest extends \PHPUnit\Framework\TestCase
         $items = $this->pool->getItems(['foo1', 'foo2']);
 
         $this->assertCount(2, $items);
+        $this->assertArrayHasKey('foo1', $items);
+        $this->assertArrayHasKey('foo2', $items);
+        $this->assertSame(['foo1', 'foo2'], array_keys($items));
+    }
+
+    public function testShouldPreserveKeysAndValuesInGetItems()
+    {
+        $item = $this->pool->getItem('alpha');
+        $item->set('a')->expiresAfter(3600);
+        $this->pool->save($item);
+
+        $item = $this->pool->getItem('beta');
+        $item->set('b')->expiresAfter(3600);
+        $this->pool->save($item);
+
+        $items = $this->pool->getItems(['alpha', 'beta', 'missing']);
+
+        $this->assertSame(['alpha', 'beta', 'missing'], array_keys($items));
+        $this->assertTrue($items['alpha']->isHit());
+        $this->assertSame('a', $items['alpha']->get());
+        $this->assertTrue($items['beta']->isHit());
+        $this->assertSame('b', $items['beta']->get());
+        $this->assertFalse($items['missing']->isHit());
+
+        $this->pool->clear();
     }
 
     public function testShouldCheckWhetherHasItem()
