@@ -78,13 +78,19 @@ class FileDriver extends Driver implements DriverInterface
     public function getRaw($key)
     {
         $filename = $this->getFilenameByKey($key);
+        $path = $this->cacheDir.'/'.$filename;
 
-        if (!file_exists($this->cacheDir.'/'.$filename)) {
+        if (!file_exists($path)) {
             return false;
         }
 
-        $compressData = file_get_contents($this->cacheDir.'/'.$filename);
-        return $this->decompress($compressData);
+        $compressData = $this->readCacheFile($path);
+
+        if ($compressData === false) {
+            return false;
+        }
+
+        return $this->safeDecompress($compressData);
     }
 
     /**
@@ -137,7 +143,41 @@ class FileDriver extends Driver implements DriverInterface
      */
     public function isValid($value)
     {
-        return is_array($value) && isset($value['key']) && array_key_exists('value', $value) && isset($value['expiration']);
+        if (!is_array($value)) {
+            return false;
+        }
+
+        if (!isset($value['key']) || !is_string($value['key'])) {
+            return false;
+        }
+
+        if (!array_key_exists('value', $value)) {
+            return false;
+        }
+
+        if ($this->containsObject($value['value'])) {
+            return false;
+        }
+
+        if (!array_key_exists('expiration', $value) || !isset($value['expiration'])) {
+            return false;
+        }
+
+        $expiration = $value['expiration'];
+
+        if ($expiration instanceof Carbon || $expiration instanceof \DateTimeInterface) {
+            return true;
+        }
+
+        if (is_int($expiration)) {
+            return true;
+        }
+
+        if (is_string($expiration) && trim($expiration) !== '') {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -152,7 +192,17 @@ class FileDriver extends Driver implements DriverInterface
         try {
             $expiration = $decompressData['expiration'];
 
-            if (!$expiration instanceof Carbon) {
+            if ($expiration instanceof Carbon) {
+                return Carbon::now()->gte($expiration);
+            }
+
+            if ($expiration instanceof \DateTimeInterface) {
+                return Carbon::now()->gte(Carbon::instance($expiration));
+            }
+
+            if (is_int($expiration) || (is_string($expiration) && trim($expiration) !== '' && ctype_digit(trim($expiration)))) {
+                $expiration = Carbon::createFromTimestamp((int) $expiration);
+            } else {
                 $expiration = Carbon::parse($expiration);
             }
 

@@ -74,15 +74,27 @@ class FileDriverTest extends \PHPUnit\Framework\TestCase
         $value = $this->fileDriver->get('foo2');
         $this->assertEquals([1, 2, 3], $value);
 
-        $object = new stdClass();
-        $object->foo = 1;
-        $this->fileDriver->store('foo3', $object, \Carbon\Carbon::now()->addHours(1));
-        $value = $this->fileDriver->get('foo3');
-        $this->assertEquals($object, $value);
-
         $this->fileDriver->store('foo4', null, \Carbon\Carbon::now()->addHours(1));
         $value = $this->fileDriver->get('foo4');
         $this->assertEquals(null, $value);
+
+        $this->clean();
+    }
+
+    public function testShouldRejectObjectPayload()
+    {
+        $this->init();
+
+        $object = new stdClass();
+        $object->foo = 1;
+        $this->fileDriver->store('foo-object', $object, \Carbon\Carbon::now()->addHours(1));
+        $this->assertFalse($this->fileDriver->get('foo-object'));
+        $this->assertFalse($this->fileDriver->has('foo-object'));
+        $this->assertFalse($this->fileDriver->getRaw('foo-object'));
+
+        $this->fileDriver->store('foo-nested-object', ['nested' => $object], \Carbon\Carbon::now()->addHours(1));
+        $this->assertFalse($this->fileDriver->get('foo-nested-object'));
+        $this->assertFalse($this->fileDriver->has('foo-nested-object'));
 
         $this->clean();
     }
@@ -94,13 +106,98 @@ class FileDriverTest extends \PHPUnit\Framework\TestCase
         $carbonInstance = \Carbon\Carbon::now()->addHours(1);
         $this->fileDriver->store('foo', [1, 2, 3], $carbonInstance);
         $value = $this->fileDriver->getRaw('foo');
-        $this->assertEquals([
-            'key' => 'foo',
-            'value' => [1, 2, 3],
-            'expiration' => $carbonInstance->toDateTimeString(),
-        ], $value);
+        $this->assertEquals('foo', $value['key']);
+        $this->assertEquals([1, 2, 3], $value['value']);
+        $this->assertInstanceOf(\Carbon\Carbon::class, $value['expiration']);
+        $this->assertEquals($carbonInstance->getTimestamp(), $value['expiration']->getTimestamp());
 
         $this->clean();
+    }
+
+    public function testShouldStoreExpirationAsTimestamp()
+    {
+        $this->init();
+
+        $carbonInstance = \Carbon\Carbon::now()->addHours(1);
+        $this->fileDriver->store('timestamp-foo', 'bar', $carbonInstance);
+
+        $reflection = new ReflectionMethod(\Roolith\Caching\Driver\FileDriver::class, 'getFilenameByKey');
+        $reflection->setAccessible(true);
+        $filename = $reflection->invoke($this->fileDriver, 'timestamp-foo');
+
+        $config = $this->fileDriver->getConfig();
+        $raw = file_get_contents($config['dir'].'/'.$filename);
+        $payload = unserialize($raw, ['allowed_classes' => false]);
+
+        $this->assertIsArray($payload);
+        $this->assertEquals('timestamp-foo', $payload['key']);
+        $this->assertEquals('bar', $payload['value']);
+        $this->assertIsInt($payload['expiration']);
+        $this->assertEquals($carbonInstance->getTimestamp(), $payload['expiration']);
+
+        $this->clean();
+    }
+
+    public function testShouldReturnFalseForTamperedAndEmptyPayloads()
+    {
+        $this->init();
+
+        $this->fileDriver->store('tampered-foo', 'valid', \Carbon\Carbon::now()->addHours(1));
+
+        $reflection = new ReflectionMethod(\Roolith\Caching\Driver\FileDriver::class, 'getFilenameByKey');
+        $reflection->setAccessible(true);
+        $filename = $reflection->invoke($this->fileDriver, 'tampered-foo');
+        $config = $this->fileDriver->getConfig();
+        $path = $config['dir'].'/'.$filename;
+
+        file_put_contents($path, 'tampered-not-serialized-payload');
+        $this->assertFalse($this->fileDriver->get('tampered-foo'));
+        $this->assertFalse($this->fileDriver->has('tampered-foo'));
+        $this->assertFalse($this->fileDriver->getRaw('tampered-foo'));
+
+        file_put_contents($path, '');
+        $this->assertFalse($this->fileDriver->get('tampered-foo'));
+        $this->assertFalse($this->fileDriver->has('tampered-foo'));
+        $this->assertFalse($this->fileDriver->getRaw('tampered-foo'));
+
+        file_put_contents($path, serialize(new stdClass()));
+        $this->assertFalse($this->fileDriver->get('tampered-foo'));
+        $this->assertFalse($this->fileDriver->has('tampered-foo'));
+        $this->assertFalse($this->fileDriver->getRaw('tampered-foo'));
+
+        file_put_contents($path, serialize(['unexpected' => 'shape']));
+        $this->assertFalse($this->fileDriver->get('tampered-foo'));
+        $this->assertFalse($this->fileDriver->has('tampered-foo'));
+        $this->assertFalse($this->fileDriver->getRaw('tampered-foo'));
+
+        $this->clean();
+    }
+
+    public function testDecompressRejectsInvalidShapes()
+    {
+        $this->assertFalse($this->fileDriver->decompress(''));
+        $this->assertFalse($this->fileDriver->decompress(null));
+        $this->assertFalse($this->fileDriver->decompress('not-serialized'));
+        $this->assertFalse($this->fileDriver->decompress(serialize(null)));
+        $this->assertFalse($this->fileDriver->decompress(serialize(new stdClass())));
+        $this->assertFalse($this->fileDriver->decompress(serialize(['unexpected' => 'shape'])));
+        $this->assertFalse($this->fileDriver->decompress(serialize(['key' => 123, 'value' => 1, 'expiration' => time()])));
+        $this->assertFalse($this->fileDriver->decompress(serialize(['key' => 'foo', 'expiration' => time()])));
+        $this->assertFalse($this->fileDriver->decompress(serialize(['key' => 'foo', 'value' => 1])));
+        $this->assertFalse($this->fileDriver->decompress(serialize(['key' => 'foo', 'value' => 1, 'expiration' => 'not-a-date'])));
+    }
+
+    public function testDecompressAcceptsLegacyDateStringExpiration()
+    {
+        $expiration = \Carbon\Carbon::now()->addHours(1);
+        $payload = serialize(['key' => 'legacy', 'value' => 'data', 'expiration' => $expiration->toDateTimeString()]);
+
+        $result = $this->fileDriver->decompress($payload);
+
+        $this->assertIsArray($result);
+        $this->assertEquals('legacy', $result['key']);
+        $this->assertEquals('data', $result['value']);
+        $this->assertInstanceOf(\Carbon\Carbon::class, $result['expiration']);
     }
 
     public function testShouldReturnBooleanWhetherCacheExistsOrNot()
