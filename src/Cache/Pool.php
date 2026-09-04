@@ -24,7 +24,7 @@ class Pool implements CacheItemPoolInterface
     /**
      * @inheritDoc
      */
-    public function getItem($key)
+    public function getItem($key): CacheItemInterface
     {
         $key = $this->validateKey($key);
 
@@ -48,7 +48,7 @@ class Pool implements CacheItemPoolInterface
     /**
      * @inheritDoc
      */
-    public function getItems(array $keys = [])
+    public function getItems(array $keys = []): iterable
     {
         $result = [];
 
@@ -62,7 +62,7 @@ class Pool implements CacheItemPoolInterface
     /**
      * @inheritDoc
      */
-    public function hasItem($key)
+    public function hasItem($key): bool
     {
         $key = $this->validateKey($key);
 
@@ -72,7 +72,7 @@ class Pool implements CacheItemPoolInterface
     /**
      * @inheritDoc
      */
-    public function clear()
+    public function clear(): bool
     {
         return $this->driver->flush();
     }
@@ -80,7 +80,7 @@ class Pool implements CacheItemPoolInterface
     /**
      * @inheritDoc
      */
-    public function deleteItem($key)
+    public function deleteItem($key): bool
     {
         $key = $this->validateKey($key);
 
@@ -90,7 +90,7 @@ class Pool implements CacheItemPoolInterface
     /**
      * @inheritDoc
      */
-    public function deleteItems(array $keys = [])
+    public function deleteItems(array $keys = []): bool
     {
         $result = true;
 
@@ -106,7 +106,7 @@ class Pool implements CacheItemPoolInterface
     /**
      * @inheritDoc
      */
-    public function save(CacheItemInterface $item)
+    public function save(CacheItemInterface $item): bool
     {
         $expiration = $item->getExpiration();
 
@@ -126,17 +126,17 @@ class Pool implements CacheItemPoolInterface
     /**
      * @inheritDoc
      */
-    public function saveDeferred(CacheItemInterface $item)
+    public function saveDeferred(CacheItemInterface $item): bool
     {
         $this->items[] = $item;
 
-        return $this;
+        return true;
     }
 
     /**
      * @inheritDoc
      */
-    public function commit()
+    public function commit(): bool
     {
         $result = true;
 

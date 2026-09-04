@@ -1,3 +1,6 @@
 .idea/
 vendor/
 .phpunit.result.cache
+.phpunit.cache/
+tests/cache/
+demo/cache/*.rcache

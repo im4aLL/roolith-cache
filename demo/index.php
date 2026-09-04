@@ -15,10 +15,15 @@ function dd($d) {
 
 $fileDriver = new FileDriver(['dir' => __DIR__. '/cache']);
 $pool = new Pool($fileDriver);
+$item = null;
 try {
     $item = $pool->getItem('foo');
-} catch (\Psr\Cache\InvalidArgumentException $e) {
+} catch (\Throwable $e) {
     echo $e->getMessage();
+}
+
+if ($item === null) {
+    exit(1);
 }
 
 if (!$item->isHit()) {
@@ -34,7 +39,7 @@ $simpleCache = new SimpleCache(new FileDriver(['dir' => __DIR__. '/cache']));
 
 try {
     dd($simpleCache->get('foo'));
-} catch (\Psr\SimpleCache\InvalidArgumentException $e) {
+} catch (\Throwable $e) {
     echo $e->getMessage();
 }
 

@@ -23,7 +23,7 @@ class SimpleCache implements CacheInterface
     /**
      * @inheritDoc
      */
-    public function get($key, $default = null)
+    public function get($key, $default = null): mixed
     {
         $key = $this->validateKey($key);
 
@@ -39,7 +39,7 @@ class SimpleCache implements CacheInterface
     /**
      * @inheritDoc
      */
-    public function set($key, $value, $ttl = null)
+    public function set($key, $value, $ttl = null): bool
     {
         $key = $this->validateKey($key);
 
@@ -51,7 +51,7 @@ class SimpleCache implements CacheInterface
     /**
      * @inheritDoc
      */
-    public function delete($key)
+    public function delete($key): bool
     {
         $key = $this->validateKey($key);
 
@@ -61,7 +61,7 @@ class SimpleCache implements CacheInterface
     /**
      * @inheritDoc
      */
-    public function clear()
+    public function clear(): bool
     {
         return $this->driver->flush();
     }
@@ -69,7 +69,7 @@ class SimpleCache implements CacheInterface
     /**
      * @inheritDoc
      */
-    public function getMultiple($keys, $default = null)
+    public function getMultiple($keys, $default = null): iterable
     {
         if (!is_array($keys) && !$keys instanceof \Traversable) {
             throw new InvalidArgumentException('Keys must be iterable: '.var_export($keys, true));
@@ -88,7 +88,7 @@ class SimpleCache implements CacheInterface
     /**
      * @inheritDoc
      */
-    public function setMultiple($values, $ttl = null)
+    public function setMultiple($values, $ttl = null): bool
     {
         if (!is_array($values) && !$values instanceof \Traversable) {
             throw new InvalidArgumentException('Values must be iterable: '.var_export($values, true));
@@ -111,7 +111,7 @@ class SimpleCache implements CacheInterface
     /**
      * @inheritDoc
      */
-    public function deleteMultiple($keys)
+    public function deleteMultiple($keys): bool
     {
         if (!is_array($keys) && !$keys instanceof \Traversable) {
             throw new InvalidArgumentException('Keys must be iterable: '.var_export($keys, true));
@@ -131,7 +131,7 @@ class SimpleCache implements CacheInterface
     /**
      * @inheritDoc
      */
-    public function has($key)
+    public function has($key): bool
     {
         $key = $this->validateKey($key);
 
