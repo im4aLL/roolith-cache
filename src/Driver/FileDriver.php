@@ -51,15 +51,21 @@ class FileDriver extends Driver implements DriverInterface
     public function get($key)
     {
         $filename = $this->getFilenameByKey($key);
+        $path = $this->cacheDir.'/'.$filename;
 
-        if (!file_exists($this->cacheDir.'/'.$filename)) {
+        if (!file_exists($path)) {
             return false;
         }
 
-        $compressData = file_get_contents($this->cacheDir.'/'.$filename);
-        $data = $this->decompress($compressData);
+        $compressData = $this->readCacheFile($path);
 
-        if ($this->isExpired($data) || !$this->isValid($data)) {
+        if ($compressData === false) {
+            return false;
+        }
+
+        $data = $this->safeDecompress($compressData);
+
+        if (!$this->isValid($data) || $this->isExpired($data)) {
             return false;
         }
 
@@ -87,8 +93,21 @@ class FileDriver extends Driver implements DriverInterface
     public function has($key)
     {
         $filename = $this->getFilenameByKey($key);
+        $path = $this->cacheDir.'/'.$filename;
 
-        return file_exists($this->cacheDir.'/'.$filename);
+        if (!file_exists($path)) {
+            return false;
+        }
+
+        $compressData = $this->readCacheFile($path);
+
+        if ($compressData === false) {
+            return false;
+        }
+
+        $data = $this->safeDecompress($compressData);
+
+        return $this->isValid($data) && !$this->isExpired($data);
     }
 
     /**
@@ -126,7 +145,71 @@ class FileDriver extends Driver implements DriverInterface
      */
     public function isExpired($decompressData)
     {
-        return Carbon::now()->gte($decompressData['expiration']);
+        if (!is_array($decompressData) || !isset($decompressData['expiration'])) {
+            return true;
+        }
+
+        try {
+            $expiration = $decompressData['expiration'];
+
+            if (!$expiration instanceof Carbon) {
+                $expiration = Carbon::parse($expiration);
+            }
+
+            return Carbon::now()->gte($expiration);
+        } catch (\Throwable $e) {
+            return true;
+        }
+    }
+
+    /**
+     * Read cache file without emitting warnings.
+     *
+     * @param string $path
+     * @return string|false
+     */
+    private function readCacheFile($path)
+    {
+        if (!is_file($path) || !is_readable($path)) {
+            return false;
+        }
+
+        set_error_handler(function () {
+            return true;
+        });
+
+        try {
+            $contents = file_get_contents($path);
+        } finally {
+            restore_error_handler();
+        }
+
+        return $contents;
+    }
+
+    /**
+     * Decompress payload without emitting warnings.
+     *
+     * @param mixed $compressData
+     * @return mixed
+     */
+    private function safeDecompress($compressData)
+    {
+        if (!is_string($compressData)) {
+            return false;
+        }
+
+        set_error_handler(function () {
+            return true;
+        });
+
+        try {
+            return $this->decompress($compressData);
+        } catch (\Throwable $e) {
+            return false;
+        } finally {
+            restore_error_handler();
+        }
     }
 
     /**

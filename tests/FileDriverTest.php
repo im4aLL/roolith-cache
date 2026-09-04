@@ -146,4 +146,69 @@ class FileDriverTest extends \PHPUnit\Framework\TestCase
 
         $this->clean();
     }
+
+    public function testShouldReturnFalseForHasWhenExpired()
+    {
+        $this->init();
+
+        $this->fileDriver->store('expired-foo', 1, \Carbon\Carbon::now()->subHours(1));
+        $this->assertFalse($this->fileDriver->has('expired-foo'));
+        $this->assertFalse($this->fileDriver->get('expired-foo'));
+
+        $this->fileDriver->store('valid-foo', 1, \Carbon\Carbon::now()->addHours(1));
+        $this->assertTrue($this->fileDriver->has('valid-foo'));
+
+        $this->clean();
+    }
+
+    public function testShouldReturnFalseForCorruptFile()
+    {
+        $this->init();
+
+        $this->fileDriver->store('corrupt-foo', 1, \Carbon\Carbon::now()->addHours(1));
+
+        $reflection = new ReflectionMethod(\Roolith\Caching\Driver\FileDriver::class, 'getFilenameByKey');
+        $reflection->setAccessible(true);
+        $filename = $reflection->invoke($this->fileDriver, 'corrupt-foo');
+
+        $config = $this->fileDriver->getConfig();
+        file_put_contents($config['dir'].'/'.$filename, 'corrupted-not-serialized');
+
+        $this->assertFalse($this->fileDriver->get('corrupt-foo'));
+        $this->assertFalse($this->fileDriver->has('corrupt-foo'));
+
+        $this->clean();
+    }
+
+    public function testIsExpiredIsDefensiveAgainstMissingExpiration()
+    {
+        $this->assertTrue($this->fileDriver->isExpired(false));
+        $this->assertTrue($this->fileDriver->isExpired(null));
+        $this->assertTrue($this->fileDriver->isExpired([]));
+        $this->assertTrue($this->fileDriver->isExpired(['value' => 1]));
+        $this->assertTrue($this->fileDriver->isExpired(['expiration' => null]));
+        $this->assertTrue($this->fileDriver->isExpired(['expiration' => 'not-a-date']));
+    }
+
+    public function testShouldCheckIsValidBeforeIsExpired()
+    {
+        $this->init();
+
+        $this->assertFalse($this->fileDriver->isValid(['unexpected' => 'shape']));
+        $this->assertTrue($this->fileDriver->isExpired(['unexpected' => 'shape']));
+
+        $this->fileDriver->store('tampered-foo', 1, \Carbon\Carbon::now()->addHours(1));
+
+        $reflection = new ReflectionMethod(\Roolith\Caching\Driver\FileDriver::class, 'getFilenameByKey');
+        $reflection->setAccessible(true);
+        $filename = $reflection->invoke($this->fileDriver, 'tampered-foo');
+
+        $config = $this->fileDriver->getConfig();
+        file_put_contents($config['dir'].'/'.$filename, serialize(['unexpected' => 'shape']));
+
+        $this->assertFalse($this->fileDriver->get('tampered-foo'));
+        $this->assertFalse($this->fileDriver->has('tampered-foo'));
+
+        $this->clean();
+    }
 }
