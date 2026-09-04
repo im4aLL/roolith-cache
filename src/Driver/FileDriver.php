@@ -18,6 +18,11 @@ class FileDriver extends Driver implements DriverInterface
     public function bootstrap()
     {
         $config = $this->getConfig();
+
+        if (!isset($config['dir']) || !is_string($config['dir']) || trim($config['dir']) === '') {
+            throw new \InvalidArgumentException('Cache directory is missing. Provide a "dir" config value.');
+        }
+
         $this->cacheDir = $config['dir'];
 
         $this->makeDir($this->cacheDir);
